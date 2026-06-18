@@ -1,21 +1,11 @@
 {
   "nombre": "Dashboard de Prueba",
-  "actualizado": "2025-06-15",
+  "actualizado": "2025-06-17",
   "capturas": [
     {
-      "archivo": "captura_enero.png",
-      "nombre": "Reporte Enero 2025",
-      "fecha": "2025-01-31"
-    },
-    {
-      "archivo": "captura_febrero.png",
-      "nombre": "Reporte Febrero 2025",
-      "fecha": "2025-02-28"
-    },
-    {
-      "archivo": "captura_marzo.png",
-      "nombre": "Reporte Marzo 2025",
-      "fecha": "2025-03-31"
+      "archivo": "captura_junio_2025.png",
+      "nombre": "Reporte Junio 2025",
+      "fecha": "2025-06-17"
     }
   ]
 }
