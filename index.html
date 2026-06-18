@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor de Capturas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --border: #252a38;
+    --accent: #3b82f6;
+    --accent-dim: rgba(59,130,246,0.12);
+    --text: #e8eaf0;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --radius: 10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    gap: 16px;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px rgba(59,130,246,0.6);
+  }
+  .dashboard-id {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  h1 {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .badge-total {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 4px 10px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 20px;
+    color: var(--accent);
+  }
+  .updated-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    display: flex;
+    flex: 1;
+    gap: 0;
+  }
+
+  /* ── TIMELINE SIDEBAR ── */
+  aside {
+    width: 72px;
+    min-height: 100%;
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+  .timeline-line {
+    position: absolute;
+    left: 50%;
+    top: 24px;
+    bottom: 24px;
+    width: 1px;
+    background: var(--border);
+    transform: translateX(-50%);
+    z-index: 0;
+  }
+  .month-node {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 0;
+    cursor: pointer;
+  }
+  .month-node .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    border: 2px solid var(--border);
+    transition: all 0.2s;
+  }
+  .month-node.active .dot {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 6px rgba(59,130,246,0.5);
+  }
+  .month-node:hover .dot {
+    border-color: var(--accent);
+  }
+  .month-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    line-height: 1;
+  }
+  .month-node.active .month-label { color: var(--accent); }
+
+  /* ── CAPTURES GRID ── */
+  .captures-area {
+    flex: 1;
+    padding: 32px;
+    overflow-y: auto;
+  }
+
+  .month-section { margin-bottom: 48px; }
+  .month-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .month-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .month-divider {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .month-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .captures-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .capture-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: pointer;
+  }
+  .capture-card:hover {
+    border-color: rgba(59,130,246,0.4);
+    transform: translateY(-2px);
+  }
+  .capture-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    display: block;
+    background: #0d1016;
+  }
+  .capture-meta {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .capture-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+  }
+  .capture-date {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ── LIGHTBOX ── */
+  #lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+  }
+  #lightbox.open { display: flex; }
+  #lightbox img {
+    max-width: 90vw;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  #lightbox-close {
+    position: absolute;
+    top: 20px; right: 24px;
+    font-size: 28px;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+    background: none;
+    border: none;
+  }
+  #lightbox-close:hover { color: var(--text); }
+  #lightbox-caption {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* ── EMPTY / ERROR STATES ── */
+  .state-msg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 32px;
+    gap: 12px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .state-msg svg { opacity: 0.3; }
+  .state-msg h2 { font-size: 16px; font-weight: 500; color: var(--text-dim); }
+  .state-msg p { font-size: 13px; max-width: 320px; line-height: 1.6; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    header { padding: 16px; }
+    aside { width: 48px; }
+    .captures-area { padding: 20px 16px; }
+    .captures-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-dot"></div>
+    <div>
+      <div class="dashboard-id" id="dash-id">cargando...</div>
+      <h1 id="dash-title">Visor de Capturas</h1>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="badge-total" id="badge-total">0 capturas</span>
+    <span class="updated-label" id="updated-label"></span>
+  </div>
+</header>
+
+<main>
+  <aside>
+    <div class="timeline-line"></div>
+    <div id="timeline-nodes"></div>
+  </aside>
+
+  <div class="captures-area" id="captures-area">
+    <div class="state-msg" id="loading-msg">
+      <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <h2>Cargando capturas...</h2>
+    </div>
+  </div>
+</main>
+
+<div id="lightbox">
+  <button id="lightbox-close" aria-label="Cerrar">&times;</button>
+  <img id="lightbox-img" src="" alt="">
+  <div id="lightbox-caption"></div>
+</div>
+
+<script>
+const MONTH_NAMES = {
+  '01':'Enero','02':'Febrero','03':'Marzo','04':'Abril',
+  '05':'Mayo','06':'Junio','07':'Julio','08':'Agosto',
+  '09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'
+};
+
+function getParam(key) {
+  return new URLSearchParams(window.location.search).get(key);
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  const [y, m, d] = str.split('-');
+  return `${d || ''} ${MONTH_NAMES[m] || ''} ${y}`.trim();
+}
+
+async function loadDashboard() {
+  const dashId = getParam('d') || 'dashboard-prueba';
+  document.getElementById('dash-id').textContent = dashId;
+
+  let indexUrl = `capturas/${dashId}/index.json`;
+
+  let data;
+  try {
+    const res = await fetch(indexUrl + '?v=' + Date.now());
+    if (!res.ok) throw new Error('not found');
+    data = await res.json();
+  } catch (e) {
+    document.getElementById('loading-msg').innerHTML = `
+      <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <h2>Sin capturas aún</h2>
+      <p>No se encontró el índice para <strong style="color:var(--accent);font-family:var(--mono)">${dashId}</strong>.<br>
+      Sube al menos una captura para comenzar.</p>`;
+    return;
+  }
+
+  document.getElementById('dash-title').textContent = data.nombre || dashId;
+  document.title = (data.nombre || dashId) + ' — Capturas';
+
+  const capturas = (data.capturas || []).filter(c => {
+    const today = new Date().toISOString().slice(0,10);
+    return !c.fecha || c.fecha <= today;
+  });
+
+  document.getElementById('badge-total').textContent =
+    capturas.length + (capturas.length === 1 ? ' captura' : ' capturas');
+
+  if (data.actualizado) {
+    document.getElementById('updated-label').textContent =
+      'act. ' + formatDate(data.actualizado);
+  }
+
+  if (capturas.length === 0) {
+    document.getElementById('loading-msg').innerHTML = `
+      <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <h2>Aún no hay capturas</h2>
+      <p>Las capturas aparecerán aquí a medida que las vayas subiendo.</p>`;
+    return;
+  }
+
+  const byMonth = {};
+  capturas.forEach(c => {
+    const key = c.fecha ? c.fecha.slice(0,7) : '0000-00';
+    if (!byMonth[key]) byMonth[key] = [];
+    byMonth[key].push(c);
+  });
+
+  const months = Object.keys(byMonth).sort();
+
+  const sidebar = document.getElementById('timeline-nodes');
+  const area = document.getElementById('captures-area');
+  area.innerHTML = '';
+
+  months.forEach((mk, idx) => {
+    const [y, m] = mk.split('-');
+    const label = (MONTH_NAMES[m] || mk).slice(0,3).toUpperCase();
+
+    const node = document.createElement('div');
+    node.className = 'month-node' + (idx === months.length - 1 ? ' active' : '');
+    node.dataset.month = mk;
+    node.innerHTML = `<div class="dot"></div><span class="month-label">${label} ${y}</span>`;
+    node.addEventListener('click', () => {
+      document.getElementById('section-' + mk)?.scrollIntoView({behavior:'smooth'});
+    });
+    sidebar.appendChild(node);
+
+    const section = document.createElement('div');
+    section.className = 'month-section';
+    section.id = 'section-' + mk;
+
+    const header = document.createElement('div');
+    header.className = 'month-header';
+    header.innerHTML = `
+      <span class="month-title">${MONTH_NAMES[m] || mk} ${y}</span>
+      <div class="month-divider"></div>
+      <span class="month-count">${byMonth[mk].length} imagen${byMonth[mk].length>1?'es':''}</span>`;
+
+    const grid = document.createElement('div');
+    grid.className = 'captures-grid';
+
+    byMonth[mk].forEach(cap => {
+      const imgSrc = `capturas/${dashId}/${cap.archivo}`;
+      const card = document.createElement('div');
+      card.className = 'capture-card';
+      card.innerHTML = `
+        <img class="capture-thumb" src="${imgSrc}" alt="${cap.nombre || cap.archivo}" loading="lazy">
+        <div class="capture-meta">
+          <span class="capture-name">${cap.nombre || cap.archivo}</span>
+          <span class="capture-date">${formatDate(cap.fecha)}</span>
+        </div>`;
+      card.addEventListener('click', () => openLightbox(imgSrc, cap));
+      grid.appendChild(card);
+    });
+
+    section.appendChild(header);
+    section.appendChild(grid);
+    area.appendChild(section);
+  });
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const mk = e.target.id.replace('section-','');
+        document.querySelectorAll('.month-node').forEach(n => n.classList.remove('active'));
+        document.querySelector(`.month-node[data-month="${mk}"]`)?.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.month-section').forEach(s => observer.observe(s));
+}
+
+function openLightbox(src, cap) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox-caption').textContent =
+    (cap.nombre || cap.archivo) + (cap.fecha ? '  ·  ' + formatDate(cap.fecha) : '');
+  document.getElementById('lightbox').classList.add('open');
+}
+
+document.getElementById('lightbox-close').addEventListener('click', () =>
+  document.getElementById('lightbox').classList.remove('open'));
+document.getElementById('lightbox').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('lightbox').classList.remove('open');
+});
+
+loadDashboard();
+</script>
+</body>
+</html>
