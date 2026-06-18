@@ -1,6 +1,6 @@
 {
   "nombre": "Dashboard de Prueba",
-  "actualizado": "2026-07-31",
+  "actualizado": "2026-06-17",
   "capturas": [
     {
       "archivo": "captura_junio_2025.png",
@@ -8,9 +8,9 @@
       "fecha": "2026-06-17"
     },
     {
-      "archivo": "captura_julio_2026.png",
+      "archivo": "captura_julio_2026.PNG",
       "nombre": "Reporte Julio 2026",
-      "fecha": "2026-07-31"
+      "fecha": "2026-06-17"
     }
   ]
 }
